@@ -1,12 +1,11 @@
-use reqwest::blocking::get;
 use serde::{Deserialize, Serialize};
-use std::env;
 use std::error::Error;
+use std::fs::read_to_string;
 use std::path::Path;
 use std::process::Command;
 
-const ICONS_DIR: &str = concat!(env!("HOME"), "/.icon");
-const SIZE: &str = "128";
+use crate::config::{download_svg, svg_to_png, ICONS_DIR};
+
 const SET_ICON: &str = r#"
 use framework "Cocoa"
 
@@ -89,23 +88,10 @@ fn set_icon(image_path: &str, directory_or_file_path: &str) {
         .expect("failed to execute process");
 }
 
-fn svg_to_png(icon_path: &str, png_path: &str) {
-    Command::new("rsvg-convert")
-        .args(&["-w", SIZE, "-h", SIZE, icon_path, "-o", png_path])
-        .output()
-        .expect("failed to execute process");
-}
-
-fn download_svg(svg_path: &str, icon_path: &str) {
-    let response = get(svg_path).unwrap();
-    std::fs::write(icon_path, response.bytes().unwrap()).unwrap();
-}
-
 fn search_icon(icon_name: &str) -> Result<Default, Box<dyn Error>> {
-    let icons: Icons = serde_json::from_str(
-        &std::fs::read_to_string(&format!("{}/icons.json", ICONS_DIR)).unwrap(),
-    )
-    .unwrap();
+    let icons: Icons =
+        serde_json::from_str(&read_to_string(&format!("{}/icons.json", ICONS_DIR)).unwrap())
+            .unwrap();
     let icon = icons
         .default_icons
         .iter()

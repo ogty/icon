@@ -1,9 +1,11 @@
 use std::env;
 use std::path::PathBuf;
+use std::process::exit;
 use structopt::StructOpt;
 
+mod config;
 mod convert;
-mod init;
+mod make;
 
 static VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -62,21 +64,25 @@ fn main() {
             icon_name,
             url_or_path,
         } => {
-            println!("Making original icon {} from {}", icon_name, url_or_path);
+            let result = make::make(&icon_name, &url_or_path);
+            if let Err(e) = result {
+                eprintln!("Error: {}", e);
+                exit(1);
+            }
         }
         SubCommand::Conv { icon_name, path } => {
             let result = convert::convert(&icon_name, &PathBuf::from(&path));
             if let Err(e) = result {
                 eprintln!("Error: {}", e);
-                std::process::exit(1);
+                exit(1);
             }
         }
         SubCommand::ConvAll { directory_path } => {
             convert::convert_all(&PathBuf::from(&directory_path));
         }
         SubCommand::Help => println!("Displaying help message"),
-        SubCommand::Init => init::setup(),
-        SubCommand::Update => println!("Updating icon information"),
+        SubCommand::Init => config::setup(),
+        SubCommand::Update => config::update(),
         SubCommand::Component {
             icon_name,
             type_,
@@ -90,6 +96,6 @@ fn main() {
     }
     if opt.version {
         println!("{}", VERSION);
-        std::process::exit(0);
+        exit(0);
     }
 }
