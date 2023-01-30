@@ -16,6 +16,12 @@ version      ?= $(shell   \
     | cut -d '=' -f2      \
     | sed -r 's/( |")//g' \
 )
+# ╭─ Awk ───────────────────────────────────────────────────────────────────────────────────────────╮
+# │  {                                                                                              │
+# │     split($0, version, ".");                                                                    │
+# │     printf("%s.%s.%s", version[1], version[2], version[3] + 1);                                 │
+# │  }                                                                                              │
+# ╰─────────────────────────────────────────────────────────────────────────────────────────────────╯
 next_version := $(shell           \
     echo ${version}               \
     | awk '{                      \
@@ -36,7 +42,7 @@ repository   := https:\/\/github.com\/ogty\/icon
 download_url := ${repository}\/releases\/download\/v${version}\/${tar_file}
 #                            ^^        ^^        ^^           ^^ WARNING: escape slash
 
-run:
+run: format lint
 	cargo run
 
 format:
@@ -52,20 +58,6 @@ build:
 	@cargo build \
 	&& mv target/debug/${app_name} ./${app_name}
 
-# 1. Update version in Cargo.toml
-# 2. Build release binary
-# 3. Create tar.gz
-# 4. Create release on GitHub
-# 5. Create formula for Homebrew
-# 6. Clean up
-update:
-	@make update-version  \
-	&& make release-build \
-	&& make tar           \
-	&& make release       \
-	&& make formula       \
-	&& make tar-clean
-
 formula:
 	@curl -s ${formula_url} \
 	| sed -r 's/^  version ".*"$$/  version "${version}"/g' \
@@ -80,9 +72,6 @@ show:
 	| grep -E '^[-a-z]+:' \
 	| sed -r 's/(.+):/- \1/g'
 
-release:
-	@gh release create v${version} target/release/${tar_file} --title "$$release_title" --latest
-
 release-build:
 	@cargo build --release
 
@@ -92,8 +81,41 @@ tar:
 tar-clean:
 	@rm target/release/*.tar.gz
 
+# ╭─ Zsh ──────────────────────────────────────────────────────────────────────────────────────────╮
+# │  $ brew install gh                                                                             │
+# │  $ gh auth login                                                                               │
+# ╰────────────────────────────────────────────────────────────────────────────────────────────────╯
+release:
+	@gh release create v${version} target/release/${tar_file} --title "$$release_title" --latest
+
+# ╭─ Diff - Cargo.toml -───────────────────────────────────────────────────────────────────────────╮
+# │  @@ -1,6 +1,6 @@                                                                               │
+# ├────┬───────────────────────────────────────────────────────────────────────────────────────────┤
+# │  1 |   [package]                                                                               │
+# │  2 |   name = "icon"                                                                           │
+# │  3 | - version = "0.0.2"                                                                       │
+# │  4 | + version = "0.0.3"                                                                       │
+# │  5 |   edition = "2021"                                                                        │
+# │  6 |   authors = ["ogty"]                                                                      │
+# ╰────┴───────────────────────────────────────────────────────────────────────────────────────────╯
 update-version:
 	@cat Cargo.toml                                                      \
 	| sed -r 's/^version = "${version}"$$/version = "${next_version}"/g' \
 	> Cargo.toml.tmp                                                     \
 	&& mv Cargo.toml.tmp Cargo.toml
+
+# ╭─ Markdown ─────────────────────────────────────────────────────────────────────────────────────╮
+# │  1. Update version in `Cargo.toml`                                                             │
+# │  2. Build release binary                                                                       │
+# │  3. Create `tar.gz`                                                                            │
+# │  4. Create release on GitHub                                                                   │
+# │  5. Create formula for Homebrew                                                                │
+# │  6. Clean up                                                                                   │
+# ╰────────────────────────────────────────────────────────────────────────────────────────────────╯
+update:
+	@make update-version  \
+	&& make release-build \
+	&& make tar           \
+	&& make release       \
+	&& make formula       \
+	&& make tar-clean
