@@ -5,28 +5,28 @@ endef
 export release_title
 
 app_name     := $(shell   \
-	cat Cargo.toml        \
-	| grep '^name'        \
-	| cut -d '=' -f2      \
-	| sed -r 's/( |")//g' \
+    cat Cargo.toml        \
+    | grep '^name'        \
+    | cut -d '=' -f2      \
+    | sed -r 's/( |")//g' \
 )
 version      ?= $(shell   \
-	cat Cargo.toml        \
-	| grep '^version'     \
-	| cut -d '=' -f2      \
-	| sed -r 's/( |")//g' \
+    cat Cargo.toml        \
+    | grep '^version'     \
+    | cut -d '=' -f2      \
+    | sed -r 's/( |")//g' \
 )
 next_version := $(shell           \
-	echo ${version}               \
-	| awk '{                      \
-		split($$0, version, "."); \
-		printf(                   \
-			"%s.%s.%s",           \
-			version[1],           \
-			version[2],           \
-			version[3] + 1        \
-		);                        \
-	}'                            \
+    echo ${version}               \
+    | awk '{                      \
+        split($$0, version, "."); \
+        printf(                   \
+            "%s.%s.%s",           \
+            version[1],           \
+            version[2],           \
+            version[3] + 1        \
+        );                        \
+    }'                            \
 )
 target       := x86_64-apple-darwin
 formula_url  := https://raw.githubusercontent.com/ogty/homebrew-icon/main/Formula/icon.rb
@@ -71,8 +71,8 @@ formula:
 	| sed -r 's/^  version ".*"$$/  version "${version}"/g' \
 	| sed -r 's/^  url ".*"$$/  url "${download_url}"/g'    \
 	| sed -r 's/^  sha256 ".*"$$/  sha256 "$(shell          \
-		shasum -a 256 target/release/${tar_file}            \
-		| cut -d ' ' -f1)"/g'                               \
+	    shasum -a 256 target/release/${tar_file}            \
+	    | cut -d ' ' -f1)"/g'                               \
 	| pbcopy
 
 show:
