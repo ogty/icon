@@ -3,11 +3,16 @@ use std::path::PathBuf;
 use std::process::exit;
 use structopt::StructOpt;
 
+mod component;
 mod config;
 mod convert;
 mod make;
 
 static VERSION: &str = env!("CARGO_PKG_VERSION");
+
+fn parse_ignore(src: &str) -> Vec<String> {
+    src.split(',').map(|s| s.to_string()).collect()
+}
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "icon", version = VERSION)]
@@ -39,6 +44,13 @@ enum SubCommand {
     ConvAll {
         #[structopt(name = "directory-path")]
         directory_path: String,
+
+        #[structopt(
+            short = "I",
+            long = "ignore",
+            default_value = "svg,png,jpg,jpeg,gif,bmp,ico,tiff,tif,webp"
+        )]
+        ignore: String,
     },
     #[structopt(name = "help")]
     Help,
@@ -52,8 +64,13 @@ enum SubCommand {
         icon_name: String,
         #[structopt(name = "type")]
         type_: String,
+
         #[structopt(short = "o", long = "output", name = "output-path")]
         output_path: Option<String>,
+        #[structopt(short = "c", long = "color")]
+        is_color: bool,
+        #[structopt(short = "s", long = "size")]
+        is_size: bool,
     },
 }
 
@@ -77,8 +94,11 @@ fn main() {
                 exit(1);
             }
         }
-        SubCommand::ConvAll { directory_path } => {
-            convert::convert_all(&PathBuf::from(&directory_path));
+        SubCommand::ConvAll {
+            directory_path,
+            ignore,
+        } => {
+            convert::convert_all(&PathBuf::from(&directory_path), parse_ignore(&ignore));
         }
         SubCommand::Help => println!("Displaying help message"),
         SubCommand::Init => config::setup(),
@@ -87,11 +107,10 @@ fn main() {
             icon_name,
             type_,
             output_path,
+            is_color,
+            is_size,
         } => {
-            println!("Making component of {} icon with type {}", icon_name, type_);
-            if let Some(path) = output_path {
-                println!("Output path: {}", path);
-            }
+            component::create(&icon_name, &type_, output_path, is_color, is_size);
         }
     }
     if opt.version {

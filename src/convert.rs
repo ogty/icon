@@ -77,8 +77,9 @@ pub fn convert(icon_name: &str, directory_or_file_path: &Path) -> Result<(), Box
     Ok(())
 }
 
-pub fn convert_all(directory_or_file_path: &Path) {
+pub fn convert_all(directory_or_file_path: &Path, ignore_list: Vec<String>) {
     println!("{}", directory_or_file_path.to_str().unwrap());
+    println!("{:?}", ignore_list);
 }
 
 fn set_icon(image_path: &str, directory_or_file_path: &str) {
